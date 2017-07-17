@@ -19,21 +19,22 @@ executable server
   if impl(ghcjs)
     buildable: False
   else
+    ghc-options:
+      -O2 -threaded -Wall
     hs-source-dirs:
       server, shared
     build-depends:
-                  acid-state,
-                  aeson,
-                  base < 5,
-                  containers,
-                  lucid,
-                  miso,
-                  mtl,
-                  network-uri,
-                  servant,
-                  servant-lucid,
-                  servant-server,
-                  warp
+      aeson,
+      base < 5,
+      containers,
+      lucid,
+      miso,
+      mtl,
+      network-uri,
+      servant,
+      servant-lucid,
+      servant-server,
+      warp
     default-language:
       Haskell2010
 

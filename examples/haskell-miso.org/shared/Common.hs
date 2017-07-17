@@ -28,10 +28,20 @@ data Action
   deriving (Show, Eq)
 
 -- | Router
-type Routes = About
-  :<|> Contact
+type Routes = Contact
   :<|> News
+  :<|> About
   :<|> Home
+
+-- | Handlers
+handlers
+  :: (Model -> View Action)
+  :<|> ((Model -> View Action)
+  :<|> ((Model -> View Action) :<|> (Model -> View Action)))
+handlers = contact
+  :<|> news
+  :<|> about
+  :<|> home
 
 -- | Routes
 type About = "about" :> View Action
@@ -42,14 +52,8 @@ type Home = View Action
 -- | Convert client route type to a server web handler type
 type family ViewTransform view r where
    ViewTransform (a :<|> b) r = ViewTransform a r :<|> ViewTransform b r
-   ViewTransform (a :> b) r = ViewTransform b r
+   ViewTransform (a :> b) r = a :> ViewTransform b r
    ViewTransform view r = r
-
--- | Handlers
-handlers = about
-  :<|> contact
-  :<|> news
-  :<|> home
 
 -- | Views
 about :: Model -> View Action
@@ -96,9 +100,19 @@ goAbout, goHome, goContact, goNews :: Action
     , goto routes newsProxy
     )
 
+goto ::
+  ( MkLink endpoint ~ URI
+  , HasLink endpoint
+  , IsElem endpoint api
+  ) => Proxy api -> Proxy endpoint -> Action
 goto a b = ChangeURI (safeLink a b)
-homeProxy = Proxy :: Proxy Home
-aboutProxy = Proxy :: Proxy About
-contactProxy = Proxy :: Proxy Contact
-newsProxy = Proxy :: Proxy News
-routes = Proxy :: Proxy Routes
+homeProxy :: Proxy Home
+homeProxy = Proxy
+aboutProxy :: Proxy About
+aboutProxy = Proxy
+contactProxy :: Proxy Contact
+contactProxy = Proxy
+newsProxy :: Proxy News
+newsProxy = Proxy
+routes :: Proxy Routes
+routes = Proxy

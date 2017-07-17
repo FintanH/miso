@@ -8,8 +8,8 @@ let
   server = ghc802.callPackage ./server { miso = miso-ghc; };
 in
   runCommand "haskell-miso.org" { inherit client server; } ''
-    mkdir -p $out/{bin,js}
-    cp ${client}/bin/client.jsexe/* $out/js
+    mkdir -p $out/{bin,static}
+    cp ${client}/bin/client.jsexe/* $out/static
     cp ${server}/bin/* $out/bin
   ''
 
