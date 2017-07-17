@@ -43,24 +43,26 @@ import           Miso.Subscription
 import           Miso.Types
 import           Miso.FFI
 
--- | Runs an isomorphic miso application
-miso :: (HasURI model, Eq model) => App model action -> IO ()
-miso App{..} = do
-  uri <- getCurrentURI
-  let modelWithUri = setURI uri model
+-- | Helper function to abstract out common functionality between `startApp` and `miso`
+common
+  :: Eq model
+  => App model action
+  -> model
+  -> ((action -> IO ()) -> IO (IORef VTree))
+  -> IO b
+common App {..} m getView = do
   -- init Notifier
   Notify {..} <- newNotify
   -- init EventWriter
   EventWriter {..} <- newEventWriter notify
   -- init empty Model
-  modelRef <- newIORef modelWithUri
+  modelRef <- newIORef m
   -- init empty actions
   actionsMVar <- newMVar S.empty
--- init Subs
+  -- init Subs
   forM_ subs $ \sub ->
     sub (readIORef modelRef) writeEvent
   -- init event application thread
-
   void . forkIO . forever $ do
     action <- getEvent
     modifyMVar_ actionsMVar $! \actions ->
@@ -69,16 +71,8 @@ miso App{..} = do
   -- that occurs when no event handlers are present on a template
   -- and `notify` is no longer in scope
   void . forkIO . forever $ threadDelay (1000000 * 86400) >> notify
-
-  let initialView = view modelWithUri
-  VTree (OI.Object iv) <- flip runView writeEvent initialView
-  -- Initial diff can be bypassed, just copy DOM into VTree
-  copyDOMIntoVTree iv
-  let initialVTree = VTree (OI.Object iv)
-  -- Create virtual dom, perform initial diff
-  viewRef <- newIORef initialVTree
-
-
+  -- Retrieves reference view
+  viewRef <- getView writeEvent
   -- Begin listening for events in the virtual dom
   delegator viewRef events
   -- Program loop, blocking on SkipChan
@@ -102,9 +96,24 @@ miso App{..} = do
       Just oldVTree `diff` Just newVTree
       atomicWriteIORef viewRef newVTree
 
+-- | Runs an isomorphic miso application
+-- Assumes the pre-rendered DOM is already present
+miso :: (HasURI model, Eq model) => App model action -> IO ()
+miso app@App{..} = do
+  uri <- getCurrentURI
+  let modelWithUri = setURI uri model
+  common app model $ \writeEvent -> do
+    let initialView = view modelWithUri
+    VTree (OI.Object iv) <- flip runView writeEvent initialView
+    -- Initial diff can be bypassed, just copy DOM into VTree
+    copyDOMIntoVTree iv
+    let initialVTree = VTree (OI.Object iv)
+    -- Create virtual dom, perform initial diff
+    newIORef initialVTree
 
 -- | Runs a miso application
 startApp :: Eq model => App model action -> IO ()
+<<<<<<< HEAD
 startApp App {..} = do
   -- init empty Model
   modelRef <- newIORef model
@@ -159,7 +168,16 @@ startApp App {..} = do
       void $ waitForAnimationFrame
       Just oldVTree `diff` Just newVTree
       atomicWriteIORef viewRef newVTree
+=======
+startApp app@App {..} =
+  common app model $ \writeEvent -> do
+    let initialView = view model
+    initialVTree <- flip runView writeEvent initialView
+    Nothing `diff` (Just initialVTree)
+    newIORef initialVTree
+>>>>>>> 79b1f75... Factored out common functions between miso and startApp
 
+-- | Helper
 foldEffects
   :: (action -> IO ())
   -> (action -> model -> Effect model action)
