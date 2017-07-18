@@ -23,9 +23,8 @@ main = do
       events = defaultEvents
       subs = [ uriSub HandleURI ]
       view m =
-        either (const the404) id $
-          runRoute (Proxy :: Proxy Routes)
-            handlers m
+        either (const $ the404 m) id $
+          runRoute (Proxy :: Proxy ClientRoutes) handlers m
 
 updateModel :: Action -> Model -> Effect Model Action
 updateModel (HandleURI u) m = m { uri = u } <# do

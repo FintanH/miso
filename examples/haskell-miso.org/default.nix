@@ -1,6 +1,6 @@
 { pkgs ? import <nixpkgs> {} }:
 let
-  inherit (pkgs) runCommand;
+  inherit (pkgs) runCommand closurecompiler;
   inherit (pkgs.haskell.packages) ghcjs ghc802;
   miso-ghc = ghc802.callPackage ./../../miso-ghc.nix { };
   miso-ghcjs = ghcjs.callPackage ./../../miso-ghcjs.nix { };
@@ -9,7 +9,8 @@ let
 in
   runCommand "haskell-miso.org" { inherit client server; } ''
     mkdir -p $out/{bin,static}
-    cp ${client}/bin/client.jsexe/* $out/static
+    cp ${client}/bin/client.jsexe/all.js $out/static/all.js
     cp ${server}/bin/* $out/bin
   ''
+
 

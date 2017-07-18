@@ -8,7 +8,7 @@ in {
        path = with pkgs; [ haskell-miso bash ];
        wantedBy = [ "multi-user.target" ];
        script = ''
-	 ./bin/server +RTS -N -RTS
+	 ./bin/server +RTS -N -A4M -RTS
        '';
        description = ''
          https://haskell-miso.org

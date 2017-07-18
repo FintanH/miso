@@ -20,13 +20,14 @@ executable server
     buildable: False
   else
     ghc-options:
-      -O2 -threaded -Wall
+      -O2 -threaded -Wall -rtsopts
     hs-source-dirs:
       server, shared
     build-depends:
       aeson,
       base < 5,
       containers,
+      http-types,
       lucid,
       miso,
       mtl,
@@ -34,6 +35,8 @@ executable server
       servant,
       servant-lucid,
       servant-server,
+      wai,
+      wai-extra,
       warp
     default-language:
       Haskell2010
