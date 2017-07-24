@@ -113,69 +113,12 @@ miso app@App{..} = do
 
 -- | Runs a miso application
 startApp :: Eq model => App model action -> IO ()
-<<<<<<< HEAD
-startApp App {..} = do
-  -- init empty Model
-  modelRef <- newIORef model
-  -- init empty actions
-  actionsMVar <- newMVar S.empty
-  -- init Notifier
-  Notify {..} <- newNotify
-  -- init EventWriter
-  EventWriter {..} <- newEventWriter notify
-  -- init Subs
-  forM_ subs $ \sub ->
-    sub (readIORef modelRef) writeEvent
-  -- init event application thread
-  void . forkIO . forever $ do
-    newAction <- getEvent
-    modifyMVar_ actionsMVar $! \actions ->
-      pure (actions |> newAction)
-  -- Hack to get around `BlockedIndefinitelyOnMVar` exception
-  -- that occurs when no event handlers are present on a template
-  -- and `notify` is no longer in scope
-  void . forkIO . forever $ threadDelay (1000000 * 86400) >> notify
-
--- ==============
-  let initialView = view model
-  -- Create virtual dom, perform initial diff
-  initialVTree <- flip runView writeEvent initialView
-  Nothing `diff` (Just initialVTree)
-  viewRef <- newIORef initialVTree
--- ==============
-
-  -- Begin listening for events in the virtual dom
-  delegator viewRef events
-  -- Process initial action of application
-  writeEvent initialAction
-  -- Program loop, blocking on SkipChan
-  forever $ wait >> do
-    -- Apply actions to model
-    shouldDraw <-
-      modifyMVar actionsMVar $! \actions -> do
-        (shouldDraw, effects) <- atomicModifyIORef' modelRef $! \oldModel ->
-          let (newModel, effects) =
-                foldl' (foldEffects writeEvent update)
-                  (oldModel, pure ()) actions
-          in (newModel, (oldModel /= newModel, effects))
-        effects
-        pure (S.empty, shouldDraw)
-    when shouldDraw $ do
-      newVTree <-
-        flip runView writeEvent
-          =<< view <$> readIORef modelRef
-      oldVTree <- readIORef viewRef
-      void $ waitForAnimationFrame
-      Just oldVTree `diff` Just newVTree
-      atomicWriteIORef viewRef newVTree
-=======
 startApp app@App {..} =
   common app model $ \writeEvent -> do
     let initialView = view model
     initialVTree <- flip runView writeEvent initialView
     Nothing `diff` (Just initialVTree)
     newIORef initialVTree
->>>>>>> 79b1f75... Factored out common functions between miso and startApp
 
 -- | Helper
 foldEffects
